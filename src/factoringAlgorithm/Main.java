@@ -5,25 +5,19 @@ import java.math.BigInteger;
 public class Main {
 	
 	private static QuadraticSieve trial;
-	private static String longNumber = "211014499133641692110753";
+	private static String longNumber = "92434447339770015548544881401";
 	private static BigInteger number = new BigInteger(longNumber); 
-	//private static BigInteger five	= BigInteger.valueOf(5);
-	//private static int[][] A = {{0,1,1},{2,4,-2},{0,3,15}};
-	//private static int[] b = {4,2,36};
-	//private static int n = 3;
 	
 	// 211014499133641692110753
+	// 92434447339770015548544881401
 	
 	public static void main(String[] args) {
 		
+		long startTime = System.currentTimeMillis();
 		trial = new QuadraticSieve(number,1020,1000);
-		//trial.generateM();
-		//trial.printNumber();
-		//trial.printPrimes();
-		//trial.printM();
-		//trial.isFSmooth(number);
-		//trial.binaryGaussianElimination();
-		//trial.printSolutions();
+		long endTime = System.currentTimeMillis();
+		long elapsedTime = endTime - startTime;
+		System.out.println("Elapsed Time:" + elapsedTime/1000 + " seconds");
 	}
 
 }

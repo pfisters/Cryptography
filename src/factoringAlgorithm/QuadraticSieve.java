@@ -68,12 +68,14 @@ public class QuadraticSieve {
 	private int[] newbinaryR;
 
 	/*
-	 * Solution vector
+	 * Solutions vector
 	 */
 	private Vector<int[]> solutions = new Vector<>();
 	
+	/*
+	 * Both factors of the prime number
+	 */
 	private BigInteger p_final;
-	
 	private BigInteger q_final;
 
 	// ==========================================================
@@ -89,7 +91,6 @@ public class QuadraticSieve {
 		this.F = F;
 		this.primes = new int[F];
 		generatePrimes();
-		//printPrimes();
 		this.M = new int[L][F];
 		this.binaryM = new int[L][F];
 		this.modifiedBinaryM = new int[L][F];
@@ -98,10 +99,7 @@ public class QuadraticSieve {
 		this.newR = new int[F];
 		this.newbinaryR = new int[F];
 		generateM();
-		//printM();
 		binaryGaussianElimination();
-		//printSolutions();
-		//printModifiedBinaryM();
 		solutionsAssembly();
 	}
 
@@ -240,10 +238,9 @@ public class QuadraticSieve {
 	// ==========================================================
 
 	/*
-	 * Generate primes upto F
+	 * Generate the first F primes
 	 */
 	private void generatePrimes() {
-		// System.out.println("Generate Primes");
 		int n = 0, i;
 		for (i = 2; n < F; i += 1) {
 			if (isPrime(i)) {
@@ -255,59 +252,38 @@ public class QuadraticSieve {
 
 	/*
 	 * Determines whether a number is prime
+	 * INPUT: 	int num
+	 * OUTPUT:	boolean: 	true => num is prime
+	 * 						false=> num is not prime
 	 */
 	private boolean isPrime(int num) {
-		// System.out.println("isPrime");
 		if (num < 2)
 			return false;
 		if (num == 2)
 			return true;
 		if (num % 2 == 0)
 			return false;
-		for (int i = 3; i * i <= num; i += 2) {
-			if (num % i == 0)
-				return false;
-		}
+		for (int i = 3; i * i <= num; i += 2) 
+			if (num % i == 0) return false;
+		
 		return true;
 	}
 
-	/*
-	 * Computes Square Root for the BigInteger class
-	 */
-	private BigInteger squareRoot(BigInteger x) {
-		// System.out.println("squareRoot");
-		BigInteger right = x;
-		BigInteger left = BigInteger.ZERO;
-		BigInteger mid;
-		while (right.subtract(left).compareTo(BigInteger.ONE) > 0) {
-			mid = (right.add(left)).shiftRight(1);
-			if (mid.multiply(mid).compareTo(x) > 0)
-				right = mid;
-			else
-				left = mid;
-		}
-		return left;
-	}
 
 	/*
-	 * Private method to compute M
+	 * Computes the Matrix M from the script
 	 */
 	private void generateM() {
-		// System.out.println("Generate M");
+		// Initialize the size of the square to be parsed
 		int N = 1;
+		// While there is not enough equations
 		while (n < L) {
-			// System.out.println("N:" + N);
 			n += addRSquared(computeR(N, N));
-
 			for (int k = 1; k < N; k += 1) {
-				// System.out.println("N:" + N +",k:" + k);
-				if (n < L)
-					n += addRSquared(computeR(k, N));
-				if (n < L)
-					n += addRSquared(computeR(N, k));
+				if (n < L) n += addRSquared(computeR(k, N));
+				if (n < L) n += addRSquared(computeR(N, k));
 			}
 			N += 1;
-			// System.out.println("n:" + n);
 		}
 	}
 
@@ -315,87 +291,89 @@ public class QuadraticSieve {
 	 * Compute r by formula (1) given in the project description
 	 */
 	private BigInteger computeR(int k, int j) {
-		// System.out.println("computeR:" + k + "," + j);
-		return squareRoot(((BigInteger.valueOf(k)).multiply(number))).add(
-				BigInteger.valueOf(j));
+		return squareRoot(((BigInteger.valueOf(k)).multiply(this.number))).add(BigInteger.valueOf(j));
 	}
 
 	/*
-	 * Private method indicating whether a BigInteger is F smooth Also, the
-	 * coefficients are stored in the temporary new row vector newR
+	 * Computes Square Root for the BigInteger class
+	 * INPUT: 	BigInteger x
+	 * OUTPUT:	Floor rounded square root of x 
+	 */
+	private BigInteger squareRoot(BigInteger x) {
+		BigInteger right = x;
+		BigInteger left = BigInteger.ZERO;
+		BigInteger mid;
+		// while right - left > 1
+		while (right.subtract(left).compareTo(BigInteger.ONE) > 0) {
+			mid = (right.add(left)).shiftRight(1);
+			// if mid^2 > x
+			if ((mid.multiply(mid)).compareTo(x) > 0)
+				right = mid;
+			else
+				left = mid;
+		}
+		return left;
+	}
+	
+	/*
+	 * Method that determines whether a number is F smooth
+	 * The primes are stored in the array primes
 	 */
 	private boolean isFSmooth(BigInteger r) {
-		// System.out.println("IsFSmooth");
 		// Reset the temporary R and binary R
 		resetR();
-		BigInteger rsquared = (r.multiply(r)).mod(number);
+		BigInteger rsquared = (r.multiply(r)).mod(this.number);
 		// generate new R
 		for (int i = 0; i < primes.length; i += 1) {
 			// if r^2 mod primes[i] == 0
-			while (rsquared.mod(BigInteger.valueOf(primes[i])).compareTo(
-					BigInteger.ZERO) == 0) {
+			while (rsquared.mod(BigInteger.valueOf(primes[i])).compareTo(BigInteger.ZERO) == 0) {
 				rsquared = rsquared.divide(BigInteger.valueOf(primes[i]));
 				newR[i] += 1;
+				newbinaryR[i] ^= 1;
 			}
 		}
-		// printNewR();
-
-		// generate the new binary R
-		for (int i = 0; i < newR.length; i += 1) {
-			newbinaryR[i] = newR[i] % 2;
-		}
-		// printNewBinaryR();
 
 		// if r == 1 -> return true, else false
-		if (rsquared.compareTo(BigInteger.ONE) == 0) {
-			// System.out.println("return true");
-			return true;
-		} else {
-			// System.out.println("return false");
-			return false;
-		}
+		if (rsquared.compareTo(BigInteger.ONE) == 0) { return true;
+		} else { return false;}
 	}
 
 	/*
-	 * Reset the temporary new row vector to the Matrix M
+	 * Reset the temporary new row vectors to the matrices M and binaryM
 	 */
 	private void resetR() {
-		// System.out.println("resetR");
-		newR = new int[F];
-		newbinaryR = new int[F];
+		this.newR = new int[F]; this.newbinaryR = new int[F];
 	}
 
 	/*
-	 * Private method indicating whether the input is already contained in M
+	 * Method indicating whether the input is already contained in M
 	 */
 	private boolean isContainedInM() {
-		// System.out.println("isContainedInM");
 		for (int i = 0; i < L; i += 1) {
 			int k = 0;
 			for (int j = 0; j < F; j += 1) {
-				if (newbinaryR[j] == binaryM[i][j]) {
+				if (newbinaryR[j] != binaryM[i][j]) {
+					break;
+				} else {
 					k += 1;
 				}
 			}
-			if (k == F)
-				return true;
+			if (k == F) return true;
 		}
 		return false;
 	}
 
 	/*
-	 * Private method to add r^2 to system of equations return 1 if it was
-	 * added, zero else
+	 * Private method to add r^2 to system of equations
+	 * INPUT: 	new possible r
+	 * OUTPUT: 	1 if r was added
+	 * 			0 else
 	 */
 	private int addRSquared(BigInteger r) {
-		// System.out.println("addRSquared");
 		if (isFSmooth(r) && !isContainedInM()) {
 			M[n] = newR;
 			binaryM[n] = newbinaryR;
 			this.r[n] = r;
-			// System.out.println("New R found");
-			// printNewR();
-			// printNewBinaryR();
 			return 1;
 		} else {
 			return 0;
@@ -405,11 +383,11 @@ public class QuadraticSieve {
 	/*
 	 * Algorithm for the binary Gaussian Elimination
 	 */
-	void binaryGaussianElimination() {
+	private void binaryGaussianElimination() {
 
 		int[][] A = binaryM;
-		int m = A[0].length;
-		int n = A.length;
+		int m = 	A[0].length; // F
+		int n =	 	A.length;	 // L
 		boolean[] marked = new boolean[n];
 
 		for (int j = 0; j < m; j++) {
@@ -423,13 +401,13 @@ public class QuadraticSieve {
 				}
 			}
 
-			// if found then look for other 1 in the same row
+			// if found, then look for another 1 in the same row
 			if (row != -1) {
 				for (int k = 0; k < m; k++) {
 					// if A_row_k == 1 add column j to column k
 					if (A[row][k] == 1 && j != k) {
 						for (int l = 0; l < n; l++) {
-							A[l][k] = (A[l][k] + A[l][j]) % 2;
+							A[l][k] ^= A[l][j];
 						}
 					}
 				}
@@ -461,7 +439,7 @@ public class QuadraticSieve {
 	/*
 	 * Assembling solutions
 	 */
-	void solutionsAssembly() {
+	private void solutionsAssembly() {
 		for (int i = 0; i < solutions.size(); i ++) {
 			BigInteger x = BigInteger.ONE;
 			int[] prim = new int[F];
@@ -487,23 +465,19 @@ public class QuadraticSieve {
 			
 			BigInteger result = this.number.gcd(y.subtract(x));
 
-			System.out.println("The result is:");
-			System.out.println("x:" + x.toString());
-			System.out.println("y:" + y.toString());
-			
 			if (result.equals(this.number) || result.equals(BigInteger.ONE)) {
 				continue;
 			} else {
 				this.p_final = result;
 				this.q_final = this.number.divide(result);
-				System.out.println("The solution is:");
-				System.out.println("p:" + p_final.toString());
-				System.out.println("q:" + q_final.toString());
-				break;
+				if(this.number.equals(p_final.multiply(q_final))) {
+					System.out.println("The solution is:");
+					System.out.println("p:" + p_final.toString());
+					System.out.println("q:" + q_final.toString());
+					break;
+				}
 			}
 		}
-		
-		
 	}
 	
 	
