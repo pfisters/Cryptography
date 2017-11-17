@@ -5,8 +5,8 @@ import java.math.BigInteger;
 public class Main {
 	
 	private static QuadraticSieve trial;
-	private static long longNumber = 307561;
-	private static BigInteger number = BigInteger.valueOf(longNumber); 
+	private static String longNumber = "211014499133641692110753";
+	private static BigInteger number = new BigInteger(longNumber); 
 	//private static BigInteger five	= BigInteger.valueOf(5);
 	//private static int[][] A = {{0,1,1},{2,4,-2},{0,3,15}};
 	//private static int[] b = {4,2,36};
@@ -16,7 +16,7 @@ public class Main {
 	
 	public static void main(String[] args) {
 		
-		trial = new QuadraticSieve(number,12,10);
+		trial = new QuadraticSieve(number,1020,1000);
 		//trial.generateM();
 		//trial.printNumber();
 		//trial.printPrimes();
