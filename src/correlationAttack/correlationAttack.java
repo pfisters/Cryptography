@@ -8,16 +8,14 @@ public class correlationAttack {
 	// PROPERTIES
 	// ==========================================================
 	
-	// length 193
-	private final int[] z = 
-			{0,0,0,0,0,1,1,1,0,1,1,1,0,1,0,0,0,1,1,0,0,0,1,0,1,1,0,1,
-			1,1,1,0,0,0,1,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,0,1,0,0,0,1,
-			0,0,1,0,1,0,0,1,1,0,0,0,1,0,0,1,0,1,1,0,1,1,1,1,1,0,1,1,
-			1,0,0,0,1,1,1,1,0,1,0,1,0,0,0,1,1,1,0,1,1,0,0,1,0,1,1,1,
-			1,0,1,1,1,1,0,1,0,1,1,0,1,0,0,1,0,1,1,0,0,1,0,1,0,1,0,0,
-			0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,
-			0,1,0,1,1,1,1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,1,0,0,0};
+	private String z_string = 
+			"0000011101110100011000101101111000100110001101111101000"
+			+ "100101001100010010110111110111000111101010001110110010"
+			+ "1111011110101101001011001010100000000111111100101000010"
+			+ "00000101111011101010011011000";
 	
+	private int[] z_sequence;
+	private int[] z_sequence_reverse;
 	private int[] sequence2_13;
 	private int[] sequence2_15;
 	private int[] sequence2_17;
@@ -30,9 +28,8 @@ public class correlationAttack {
 	 * Public Constructor
 	 */
 	public correlationAttack() {
-		this.sequence2_13 = new int[2*8204];
-		this.sequence2_15 = new int[2*32782];
-		this.sequence2_17 = new int[2*131088];
+		parseString();
+		reverseArray();
 		create2_13();
 		create2_15();
 		create2_17();
@@ -43,21 +40,29 @@ public class correlationAttack {
 	// ==========================================================
 
 	public static void main(String[] args) {
+		
 		correlationAttack trial = new correlationAttack();
-		//trial.print2_13();
+
 		//trial.test2_13();
 		//trial.test2_15();
 		//trial.test2_17();
-		//System.out.print(trial.z.length);
-		int u1 = trial.corr(trial.sequence2_13);
-		int u2 = trial.corr(trial.sequence2_15);
-		int u3 = trial.corr(trial.sequence2_17);
+		
+		int u1 = trial.corr(trial.sequence2_13,trial.z_sequence);
+		int u2 = trial.corr(trial.sequence2_15,trial.z_sequence);
+		int u3 = trial.corr(trial.sequence2_17,trial.z_sequence);
+		
+		int u1_r = trial.corr(trial.sequence2_13,trial.z_sequence_reverse);
+		int u2_r = trial.corr(trial.sequence2_15,trial.z_sequence_reverse);
+		int u3_r = trial.corr(trial.sequence2_17,trial.z_sequence_reverse);
 		
 		int[] z_gen = trial.generateZ(u1, u2, u3);
+		int[] z_gen_r = trial.generateZ(u1_r, u2_r, u3_r);
 		
-		int result = trial.hamming(z_gen, trial.z);
+		int result = trial.hamming(z_gen, trial.z_sequence);
+		int result_r = trial.hamming(z_gen_r,trial.z_sequence_reverse);
 		
-		System.out.print("The result is: " + result);
+		System.out.println("The result is: " + result);
+		System.out.println("The inverse result is: " + result_r);
 		
 	}
 	
@@ -198,6 +203,32 @@ public class correlationAttack {
 	// ==========================================================
 
 	/*
+	 * Convert the String into a integer array
+	 */
+	private void parseString(){
+		
+		int length = z_string.length();
+		this.z_sequence = new int[length];
+		
+		for (int i = 0; i < length; i++) {
+			z_sequence[i] = Integer.parseInt(String.valueOf(z_string.charAt(i)));
+		}
+		
+	}
+	
+	/*
+	 * Reverse the string
+	 */
+	private void reverseArray() {
+	
+		this.z_sequence_reverse = new int[z_sequence.length];
+		
+		for (int i = 0; i < this.z_sequence_reverse.length; i++) {
+			this.z_sequence_reverse[i] = this.z_sequence[this.z_sequence.length-i-1];
+		}
+	}
+	
+	/*
 	 * Create lfrs with period 2^13-1
 	 * Initial state: 0000000000001
 	 * Primitive Element: 1+D+D^2 +D^4 +D^6 +D^7 +D^10 +D^11 +D^13,
@@ -205,6 +236,7 @@ public class correlationAttack {
 	private void create2_13() {
 		
 		// Initialize the sequence
+		this.sequence2_13 = new int[2*8191];
 		sequence2_13[12] = 1;
 		
 		for (int i = 13; i<sequence2_13.length; i++) {
@@ -230,6 +262,7 @@ public class correlationAttack {
 	private void create2_15() {
 		
 		// Initialize the sequence
+		this.sequence2_15 = new int[2*32767];
 		sequence2_15[14] = 1;
 		
 		for (int i = 15; i<sequence2_15.length; i++) {
@@ -255,6 +288,7 @@ public class correlationAttack {
 	private void create2_17() {
 		
 		// Initialize the sequence
+		this.sequence2_17 = new int[2*131071];
 		sequence2_17[16] = 1;
 		
 		for (int i = 17; i<sequence2_17.length; i++) {
@@ -273,23 +307,24 @@ public class correlationAttack {
 	}
 	
 
-	private int corr(int[] u) {
+	private int corr(int[] u, int[] z_seq) {
 		
-		int p_star = z.length;
+		int p_star = z_seq.length;
 		int times = 0;
 		int index = 0;
 		
-		for(int i = z.length - 1; i < u.length; i++) {
-			int p_star_new = hamming(z, Arrays.copyOfRange(u, i - z.length + 1, i + 1));
+		for(int i = z_seq.length - 1; i < u.length; i++) {
+			int p_star_new = hamming(z_seq, Arrays.copyOfRange(u, i - z_seq.length + 1, i + 1));
 			if (p_star_new == p_star) times ++;
-			if (p_star_new <= p_star){
+			if (p_star_new < p_star){
 				p_star = p_star_new;
 				times = 1;
-				index = i - z.length + 1;
+				index = i - z_seq.length + 1;
 			}
 		}
 		System.out.println("The index of the highest correlation is of: " + index);
 		System.out.println("It appeared " + times + " times.");
+		System.out.println("The hamming distance: " + p_star);
 		return index;
 	}
 	
@@ -298,9 +333,7 @@ public class correlationAttack {
 	 * Number of different entries of two test vectors of the same length
 	 */
 	private int hamming(int[] test, int[] u) {
-		
-		// System.out.println("lengths :" + test.length + " , " + u.length);
-		
+				
 		int d = 0;
 		
 		for (int i = 0; i < test.length; i++) {
@@ -314,7 +347,7 @@ public class correlationAttack {
 	 */
 	private int[] generateZ(int index_2_13, int index_2_15, int index_2_17) {
 		
-		int[] z_gen = new int[z.length];
+		int[] z_gen = new int[z_sequence.length];
 		
 		for (int i = 0; i < z_gen.length; i++) {
 		
